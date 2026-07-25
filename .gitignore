@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# never in this repo: credentials, private corpora, Weryta internals
+*.token
+*.env
+.discord.env
+private/

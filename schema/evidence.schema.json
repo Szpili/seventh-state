@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Szpili/seventh-state/schema/evidence.schema.json",
+  "title": "Evidence",
+  "description": "A piece of evidence as a first-class record with its own lifecycle and its own clock. 'valid' is the document's validity in the world; 'obtained_at' and history timestamps are when WE came to believe something about it.",
+  "type": "object",
+  "required": ["id", "document", "obtained_at", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string" },
+    "document": {
+      "type": "object",
+      "required": ["hash"],
+      "additionalProperties": false,
+      "properties": {
+        "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "media_type": { "type": "string" },
+        "retrieved_from": { "type": "string" },
+        "issuer": { "type": "string" }
+      }
+    },
+    "locator": {
+      "description": "Where inside the document. A wrong locator is a fidelity failure: correct the record, do not change status.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "page": { "type": "integer", "minimum": 1 },
+        "span": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "quote": { "type": "string" },
+    "obtained_at": { "type": "string", "format": "date-time" },
+    "status": {
+      "description": "Only 'authentic' warrants a claim. Everything else withdraws warrant — which sends dependent claims to unknown, never to contradicted.",
+      "enum": ["unverified", "authentic", "disputed", "retracted", "forged", "superseded"]
+    },
+    "valid": {
+      "description": "The document's own validity in the world. null 'to' means open-ended.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": ["string", "null"] },
+        "to": { "type": ["string", "null"] }
+      }
+    },
+    "derives_from": {
+      "description": "Evidence id this one is downstream of. Two records sharing an ancestor are NOT independent witnesses.",
+      "type": ["string", "null"]
+    },
+    "history": {
+      "description": "Append-only. Evidence is never deleted on a status change.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status", "at", "by"],
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": ["unverified", "authentic", "disputed", "retracted", "forged", "superseded"]
+          },
+          "at": { "type": "string", "format": "date-time" },
+          "by": { "type": "string" },
+          "basis": {
+            "description": "Evidence about the evidence — why we changed our mind.",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

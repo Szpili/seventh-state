@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Szpili/seventh-state/schema/rating.schema.json",
+  "title": "Rating",
+  "description": "One rating of one subject, on axes that are kept orthogonal on purpose. Veracity is a property of the world; spin and affect are properties of the rater.",
+  "type": "object",
+  "required": ["subject", "rater", "at"],
+  "additionalProperties": false,
+  "properties": {
+    "subject": { "$ref": "#/$defs/subject" },
+    "veracity": {
+      "description": "Truth axis. Closed enumeration by design: no score, no percentage, no confidence. Absent means not assessed, which is not the same as 'unknown' asserted deliberately.",
+      "enum": ["entailed", "contradicted", "unknown"]
+    },
+    "spin": {
+      "description": "Declared intent of the recorder. 'green' means 'I declare no spin', NOT 'this is objective'. Absent means not assessed — MUST NOT be defaulted to green.",
+      "enum": ["redshift", "green", "blueshift"]
+    },
+    "affect": { "$ref": "#/$defs/affect" },
+    "rater": { "$ref": "#/$defs/rater" },
+    "at": { "type": "string", "format": "date-time" },
+    "basis": {
+      "description": "Evidence ids. Required and non-empty when veracity is entailed or contradicted.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reason": {
+      "description": "Why this rating holds — in particular which of the two silences an 'unknown' is.",
+      "enum": ["no-evidence", "warrant-withdrawn", "counter-evidence", "proved"]
+    },
+    "note": { "type": "string" },
+    "retracted_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "veracity": { "enum": ["entailed", "contradicted"] } },
+        "required": ["veracity"]
+      },
+      "then": {
+        "required": ["basis"],
+        "properties": {
+          "basis": { "minItems": 1 },
+          "rater": { "properties": { "kind": { "const": "authority" } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "rater": { "properties": { "kind": { "const": "crowd" } }, "required": ["kind"] } },
+        "required": ["rater"]
+      },
+      "then": {
+        "description": "A crowd may report how a text reads, never whether it is true.",
+        "properties": { "veracity": { "enum": ["unknown"] } }
+      }
+    }
+  ],
+  "$defs": {
+    "subject": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "subject", "relation", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "claim" },
+            "subject": { "type": "string" },
+            "relation": { "type": "string" },
+            "object": { "type": "string" },
+            "at": {
+              "description": "Valid-time instant the claim is asserted about, if any.",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "document" },
+            "uri": { "type": "string" },
+            "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          },
+          "anyOf": [{ "required": ["uri"] }, { "required": ["hash"] }]
+        }
+      ]
+    },
+    "rater": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": {
+          "description": "Only 'authority' may set veracity, and only with a basis.",
+          "enum": ["human", "crowd", "machine", "authority"]
+        },
+        "display": { "type": "string" },
+        "n": {
+          "description": "Sample size. Required for crowd raters.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "method": { "type": "string" }
+      },
+      "if": { "properties": { "kind": { "const": "crowd" } }, "required": ["kind"] },
+      "then": { "required": ["n"] }
+    },
+    "affect": {
+      "type": "object",
+      "required": ["valence", "arousal"],
+      "additionalProperties": false,
+      "properties": {
+        "valence": { "type": "number", "minimum": -1, "maximum": 1 },
+        "arousal": { "type": "number", "minimum": 0, "maximum": 1 },
+        "label": { "type": "string" }
+      }
+    }
+  }
+}
