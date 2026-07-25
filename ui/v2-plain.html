@@ -1,0 +1,301 @@
+<title>Quick check — one question</title>
+<style>
+  :root {
+    --ground: #EFF2F6;
+    --card: #FFFFFF;
+    --ink: #171C26;
+    --muted: #616B7C;
+    --faint: #97A0AF;
+    --edge: #DFE4EB;
+    --down: #C4503C;
+    --even: #6E7A8A;
+    --up: #3A6FC4;
+    --focus: #3A6FC4;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0F131A; --card: #191E28; --ink: #E9EDF4; --muted: #98A2B3;
+      --faint: #6B7484; --edge: #2A313E;
+      --down: #E0664F; --even: #8B96A6; --up: #5A93E8; --focus: #5A93E8;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #EFF2F6; --card: #FFFFFF; --ink: #171C26; --muted: #616B7C;
+    --faint: #97A0AF; --edge: #DFE4EB;
+    --down: #C4503C; --even: #6E7A8A; --up: #3A6FC4; --focus: #3A6FC4;
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F131A; --card: #191E28; --ink: #E9EDF4; --muted: #98A2B3;
+    --faint: #6B7484; --edge: #2A313E;
+    --down: #E0664F; --even: #8B96A6; --up: #5A93E8; --focus: #5A93E8;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); line-height: 1.5;
+    display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { width: 100%; max-width: 520px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--edge); border-radius: 14px;
+    padding: 26px 24px 22px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  }
+
+  /* ---- top row: tiny progress + tiny die ---- */
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--edge); transition: background .2s; }
+  .dot.done { background: var(--muted); }
+  .dot.now { background: var(--ink); }
+  .step-label { font-size: 12.5px; color: var(--faint); margin-left: auto; }
+  svg.die { width: 26px; height: 26px; opacity: .9; }
+
+  /* ---- the thing being judged ---- */
+  .quote {
+    font-size: 21px; line-height: 1.42; text-wrap: balance; margin: 0 0 4px;
+    letter-spacing: -0.011em;
+  }
+  .whose { font-size: 13px; color: var(--faint); margin: 10px 0 0; }
+
+  .ask {
+    margin: 24px 0 12px; font-size: 15.5px; font-weight: 600; color: var(--ink);
+  }
+
+  /* ---- the three-position choice ---- */
+  .scale { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .scale-ends { display: flex; justify-content: space-between; margin-top: 7px; }
+  .scale-ends span { font-size: 11.5px; color: var(--faint); }
+
+  button.pick {
+    font: inherit; font-size: 14.5px; font-weight: 550; color: var(--ink);
+    background: var(--card); border: 1.5px solid var(--edge); border-radius: 10px;
+    padding: 16px 8px 14px; cursor: pointer; text-align: center;
+    display: grid; gap: 8px; justify-items: center; line-height: 1.25;
+    transition: border-color .13s, background .13s, transform .07s;
+  }
+  button.pick:hover { border-color: var(--muted); }
+  button.pick:active { transform: translateY(1px); }
+  button.pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  button.pick .bar { width: 26px; height: 4px; border-radius: 3px; background: currentColor; }
+  #p-down { color: var(--down); }
+  #p-even { color: var(--even); }
+  #p-up   { color: var(--up); }
+  button.pick .txt { color: var(--ink); }
+
+  button.skip {
+    font: inherit; font-size: 14.5px; font-weight: 550; color: var(--ink);
+    width: 100%; margin-top: 8px; background: var(--card);
+    border: 1.5px dashed var(--edge); border-radius: 10px; padding: 14px;
+    cursor: pointer; transition: border-color .13s;
+  }
+  button.skip:hover { border-color: var(--muted); }
+  button.skip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* ---- done panel ---- */
+  .done { text-align: center; padding: 8px 0 4px; }
+  .done h2 { font-size: 19px; margin: 14px 0 8px; letter-spacing: -0.012em; }
+  .done p { font-size: 14.5px; color: var(--muted); margin: 0 auto; max-width: 42ch; }
+  .tally { display: grid; gap: 8px; margin: 20px 0 4px; text-align: left; }
+  .tally-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+               font-size: 13.5px; padding: 9px 12px; border: 1px solid var(--edge); border-radius: 8px; }
+  .tally-row .q { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tally-row .a { font-weight: 600; white-space: nowrap; }
+  .punch { margin-top: 18px; padding: 14px 16px; border-radius: 10px;
+           background: var(--ground); font-size: 14.5px; color: var(--ink); }
+  .punch b { font-weight: 650; }
+
+  /* ---- footer bits ---- */
+  .below { display: flex; align-items: center; gap: 14px; margin-top: 14px; padding: 0 4px; }
+  .below button {
+    font: inherit; font-size: 12.5px; color: var(--faint); background: none;
+    border: none; padding: 4px 0; cursor: pointer; text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .below button:hover { color: var(--muted); }
+  .below button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .below .grow { margin-left: auto; }
+
+  .peek {
+    margin-top: 10px; border: 1px solid var(--edge); border-radius: 10px;
+    background: var(--card); overflow: hidden;
+  }
+  .peek pre {
+    margin: 0; padding: 14px; font-family: var(--mono); font-size: 12px; line-height: 1.7;
+    overflow-x: auto; color: var(--muted);
+  }
+  .peek .k { color: var(--faint); }
+  .peek .s { color: var(--up); }
+  .peek .note { display: block; padding: 0 14px 12px; font-size: 12px; color: var(--faint); }
+  [hidden] { display: none !important; }
+</style>
+
+<div class="shell">
+  <div class="card">
+    <!-- ================= asking ================= -->
+    <div id="asking">
+      <div class="top">
+        <div class="dots" id="dots" aria-hidden="true"></div>
+        <span class="step-label" id="stepLabel">1 of 3</span>
+        <svg class="die" viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M20 3 L6 20 L20 37 L34 20 Z" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+          <path d="M6 20 L20 25 L34 20" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+          <path d="M20 3 L20 25" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/>
+          <circle id="dieTip" cx="20" cy="3" r="4" fill="currentColor" opacity=".18"/>
+        </svg>
+      </div>
+
+      <p class="quote" id="quote"></p>
+      <p class="whose" id="whose"></p>
+
+      <p class="ask">Does it try to push you one way?</p>
+
+      <div class="scale">
+        <button class="pick" id="p-down" data-a="redshift">
+          <span class="bar"></span><span class="txt">Talks it down</span>
+        </button>
+        <button class="pick" id="p-even" data-a="green">
+          <span class="bar"></span><span class="txt">Just states it</span>
+        </button>
+        <button class="pick" id="p-up" data-a="blueshift">
+          <span class="bar"></span><span class="txt">Talks it up</span>
+        </button>
+      </div>
+      <div class="scale-ends"><span>negative</span><span>positive</span></div>
+
+      <button class="skip" id="p-skip" data-a="">Can't tell</button>
+    </div>
+
+    <!-- ================= done ================= -->
+    <div id="finished" hidden>
+      <div class="done">
+        <svg class="die" viewBox="0 0 40 40" style="width:38px;height:38px" aria-hidden="true">
+          <path d="M20 3 L6 20 L20 37 L34 20 Z" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/>
+          <path d="M6 20 L20 25 L34 20" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/>
+          <path d="M20 3 L20 25" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/>
+        </svg>
+        <h2>Thanks — you're through.</h2>
+        <p>Three taps, and you told us something a machine reads badly.</p>
+        <div class="tally" id="tally"></div>
+        <div class="punch">
+          <b>All three could be true.</b> How something is written and whether it's
+          right are two different questions — so we never mix them into one score.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="below">
+    <button id="again" hidden>Start over</button>
+    <button id="togglePeek" class="grow">What did this record?</button>
+  </div>
+
+  <div class="peek" id="peek" hidden>
+    <pre id="json"></pre>
+    <span class="note" id="peekNote"></span>
+  </div>
+</div>
+
+<script>
+  const ITEMS = [
+    { text: "The council's plan will wipe out every small shop in the old town.",
+      whose: "Local paper, 14 March" },
+    { text: "The council approved the plan on 14 March, by nine votes to four.",
+      whose: "Meeting minutes, p. 6" },
+    { text: "This bold, forward-looking plan will finally bring the old town back to life.",
+      whose: "Council press release" },
+  ];
+  const WORD = { redshift: "Talks it down", green: "Just states it", blueshift: "Talks it up", "": "Can't tell" };
+  const HUE  = { redshift: "--down", green: "--even", blueshift: "--up" };
+
+  let i = 0;
+  const answers = [];
+  const $ = (id) => document.getElementById(id);
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  function drawDots() {
+    $('dots').innerHTML = ITEMS.map((_, n) =>
+      `<span class="dot ${n < i ? 'done' : n === i ? 'now' : ''}"></span>`).join('');
+    $('stepLabel').textContent = `${Math.min(i + 1, ITEMS.length)} of ${ITEMS.length}`;
+  }
+
+  function render() {
+    if (i >= ITEMS.length) return finish();
+    drawDots();
+    $('quote').textContent = ITEMS[i].text;
+    $('whose').textContent = ITEMS[i].whose;
+    const tip = $('dieTip');
+    tip.setAttribute('fill', 'currentColor');
+    tip.setAttribute('opacity', '.18');
+  }
+
+  function finish() {
+    $('asking').hidden = true;
+    $('finished').hidden = false;
+    $('again').hidden = false;
+    $('tally').innerHTML = ITEMS.map((it, n) => {
+      const a = answers[n];
+      const colour = a ? `color:var(${HUE[a]})` : 'color:var(--faint)';
+      return `<div class="tally-row"><span class="q">${it.text}</span>
+              <span class="a" style="${colour}">${WORD[a]}</span></div>`;
+    }).join('');
+    renderJSON();
+  }
+
+  function renderJSON() {
+    const rows = answers.map((a, n) => {
+      const line = a
+        ? `    { <span class="k">"item"</span>: ${n + 1}, <span class="k">"spin"</span>: <span class="s">"${a}"</span> }`
+        : `    { <span class="k">"item"</span>: ${n + 1} }`;
+      return line;
+    });
+    $('json').innerHTML =
+`{
+  <span class="k">"rater"</span>: { <span class="k">"kind"</span>: <span class="s">"crowd"</span>, <span class="k">"n"</span>: 1 },
+  <span class="k">"ratings"</span>: [
+${rows.join(',\n')}
+  ]
+}`;
+    const skipped = answers.filter(a => !a).length;
+    $('peekNote').textContent = skipped
+      ? `No answer is stored for the ${skipped === 1 ? 'one you' : `${skipped} you`} couldn't tell — a view you didn't give is never invented. Nothing here says whether these are true; that is a different question, and a crowd is not the right place to ask it.`
+      : `Nothing here says whether these are true. That is a different question, and a crowd is not the right place to ask it.`;
+  }
+
+  function answer(value) {
+    answers[i] = value;
+    if (value) {
+      const tip = $('dieTip');
+      tip.setAttribute('fill', css(HUE[value]));
+      tip.setAttribute('opacity', '1');
+    }
+    i++;
+    setTimeout(render, value ? 190 : 90);
+  }
+
+  document.querySelectorAll('[data-a]').forEach(b =>
+    b.addEventListener('click', () => answer(b.dataset.a)));
+
+  $('again').addEventListener('click', () => {
+    i = 0; answers.length = 0;
+    $('asking').hidden = false; $('finished').hidden = true; $('again').hidden = true;
+    $('peek').hidden = true; $('togglePeek').textContent = 'What did this record?';
+    render();
+  });
+
+  $('togglePeek').addEventListener('click', () => {
+    const p = $('peek');
+    p.hidden = !p.hidden;
+    $('togglePeek').textContent = p.hidden ? 'What did this record?' : 'Hide';
+    if (!p.hidden && !answers.length) {
+      $('json').innerHTML = '<span class="k">// nothing answered yet</span>';
+      $('peekNote').textContent = '';
+    } else if (!p.hidden) renderJSON();
+  });
+
+  render();
+</script>

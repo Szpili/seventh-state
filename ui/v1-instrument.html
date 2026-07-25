@@ -1,0 +1,412 @@
+<title>seventh-state — rating instrument</title>
+<style>
+  :root {
+    --ground: #0B0E14;
+    --panel: #141924;
+    --panel-2: #1B2130;
+    --edge: #27303F;
+    --ink: #E6EAF2;
+    --muted: #8792A8;
+    --faint: #5B6579;
+
+    --redshift: #E0523F;
+    --neutral: #7A9A80;
+    --blueshift: #4C82D9;
+    --unknown: #DDE5F0;
+
+    --true: #F2F5FA;
+    --false: #2A2F3B;
+
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --r: 3px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #F5F7FA; --panel: #FFFFFF; --panel-2: #EEF1F6; --edge: #D6DCE6;
+      --ink: #131722; --muted: #5C6678; --faint: #8B95A6;
+      --unknown: #46506A; --true: #FFFFFF; --false: #1B2029;
+      --redshift: #C4402F; --neutral: #5E8168; --blueshift: #2F62BE;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0B0E14; --panel: #141924; --panel-2: #1B2130; --edge: #27303F;
+    --ink: #E6EAF2; --muted: #8792A8; --faint: #5B6579;
+    --unknown: #DDE5F0; --true: #F2F5FA; --false: #2A2F3B;
+    --redshift: #E0523F; --neutral: #7A9A80; --blueshift: #4C82D9;
+  }
+  :root[data-theme="light"] {
+    --ground: #F5F7FA; --panel: #FFFFFF; --panel-2: #EEF1F6; --edge: #D6DCE6;
+    --ink: #131722; --muted: #5C6678; --faint: #8B95A6;
+    --unknown: #46506A; --true: #FFFFFF; --false: #1B2029;
+    --redshift: #C4402F; --neutral: #5E8168; --blueshift: #2F62BE;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+           padding-bottom: 14px; border-bottom: 1px solid var(--edge); }
+  .brand { font-family: var(--mono); font-size: 13px; letter-spacing: .14em;
+           text-transform: uppercase; color: var(--ink); }
+  .brand b { color: var(--muted); font-weight: 400; }
+  .tag { font-size: 12.5px; color: var(--faint); margin-left: auto; font-family: var(--mono); }
+
+  .grid { display: grid; grid-template-columns: 300px 1fr; gap: 28px; margin-top: 28px; align-items: start; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ---------- instrument ---------- */
+  .instrument {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: var(--r);
+    padding: 20px; display: grid; gap: 14px; justify-items: center;
+    position: sticky; top: 24px;
+  }
+  @media (max-width: 760px) { .instrument { position: static; } }
+  .stage { width: 210px; height: 210px; display: grid; place-items: center; }
+  svg.die { width: 190px; height: 190px; overflow: visible; }
+  .floating { animation: float 5.5s ease-in-out infinite; }
+  @keyframes float {
+    0%, 100% { transform: translateY(-6px) rotate(-1.2deg); }
+    50%      { transform: translateY(6px) rotate(1.2deg); }
+  }
+  .settled { animation: settle .5s cubic-bezier(.2,.9,.25,1) both; }
+  @keyframes settle {
+    0% { transform: translateY(-14px) scale(1.02); }
+    60% { transform: translateY(3px) scale(.995); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .floating, .settled { animation: none; }
+  }
+  .readout {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); text-align: center; min-height: 34px;
+  }
+  .readout strong { display: block; font-size: 15px; letter-spacing: .1em; color: var(--ink); font-weight: 600; }
+  .readout .dim { color: var(--faint); font-size: 11.5px; letter-spacing: .06em; text-transform: none; }
+
+  /* ---------- question ---------- */
+  .claim {
+    background: var(--panel); border: 1px solid var(--edge); border-left: 3px solid var(--muted);
+    border-radius: var(--r); padding: 16px 18px;
+  }
+  .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .16em;
+            text-transform: uppercase; color: var(--faint); }
+  .claim p { margin: 6px 0 0; font-size: 19px; line-height: 1.4; text-wrap: balance; }
+  .src { margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
+
+  .step { margin-top: 22px; }
+  .step > .kicker { display: block; margin-bottom: 9px; }
+  .row { display: grid; gap: 8px; }
+  .row.three { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 560px) { .row.three { grid-template-columns: 1fr; } }
+
+  button.opt {
+    font-family: var(--sans); font-size: 15px; font-weight: 550; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--edge); border-radius: var(--r);
+    padding: 15px 12px; cursor: pointer; text-align: center;
+    display: grid; gap: 3px; justify-items: center;
+    transition: border-color .14s, background .14s, transform .06s;
+  }
+  button.opt:hover { background: var(--panel-2); border-color: var(--muted); }
+  button.opt:active { transform: translateY(1px); }
+  button.opt:focus-visible { outline: 2px solid var(--blueshift); outline-offset: 2px; }
+  button.opt .sub { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--faint); font-weight: 400; }
+  button.opt[aria-pressed="true"] { border-color: currentColor; background: var(--panel-2); }
+  button.opt[aria-pressed="true"] .sub { color: inherit; opacity: .8; }
+
+  .swatch { width: 100%; height: 3px; border-radius: 2px; background: currentColor; opacity: .55; }
+  #t-true[aria-pressed="true"], #t-false[aria-pressed="true"] { color: var(--ink); }
+  #t-unknown[aria-pressed="true"] { color: var(--unknown); }
+  #s-red { color: var(--redshift); }
+  #s-green { color: var(--neutral); }
+  #s-blue { color: var(--blueshift); }
+  #s-skip { color: var(--faint); }
+
+  .hint { font-size: 13px; color: var(--muted); margin: 9px 0 0; }
+  .hint b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- record ---------- */
+  .record {
+    margin-top: 22px; background: var(--panel); border: 1px solid var(--edge);
+    border-radius: var(--r); overflow: hidden;
+  }
+  .record-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+                 border-bottom: 1px solid var(--edge); background: var(--panel-2); }
+  .record-head .kicker { flex: 1; }
+  pre { margin: 0; padding: 14px; overflow-x: auto; font-family: var(--mono);
+        font-size: 12.5px; line-height: 1.65; color: var(--ink); }
+  .k { color: var(--muted); }
+  .v { color: var(--blueshift); }
+  .v.warn { color: var(--redshift); }
+  .v.calm { color: var(--neutral); }
+  .cm { color: var(--faint); font-style: italic; }
+
+  .demo { margin-top: 22px; padding: 16px 18px; border: 1px dashed var(--edge);
+          border-radius: var(--r); background: color-mix(in srgb, var(--panel) 60%, transparent); }
+  .demo p { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
+  button.ghost {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    background: transparent; color: var(--ink); border: 1px solid var(--muted);
+    border-radius: var(--r); padding: 9px 14px; cursor: pointer;
+  }
+  button.ghost:hover { background: var(--panel-2); }
+  button.ghost:focus-visible { outline: 2px solid var(--blueshift); outline-offset: 2px; }
+  button.ghost[disabled] { opacity: .4; cursor: not-allowed; }
+
+  .legend { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--edge);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+  .legend h3 { font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+               text-transform: uppercase; color: var(--faint); margin: 0 0 5px; font-weight: 500; }
+  .legend p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .legend em { color: var(--ink); font-style: normal; }
+  footer { margin-top: 26px; font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
+  a { color: inherit; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="brand">seventh<b>-</b>state</span>
+    <span class="tag">rating instrument · v0.1 preview</span>
+  </header>
+
+  <div class="grid">
+    <!-- ============ instrument ============ -->
+    <div class="instrument">
+      <div class="stage">
+        <svg class="die floating" id="die" viewBox="0 0 200 200" role="img" aria-labelledby="dieLabel">
+          <title id="dieLabel">State indicator</title>
+          <defs>
+            <linearGradient id="poleGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" id="poleTop" stop-color="#DDE5F0" stop-opacity="0.20"/>
+              <stop offset="100%" id="poleBot" stop-color="#DDE5F0" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <!-- shadow / resting plane -->
+          <ellipse id="shadow" cx="100" cy="182" rx="42" ry="7" fill="#000" opacity="0"/>
+          <!-- bipyramid: top apex, bottom apex, 3 equatorial vertices -->
+          <g id="body" stroke-linejoin="round">
+            <polygon id="faceL" points="100,22 44,112 100,138" fill="url(#poleGrad)"/>
+            <polygon id="faceR" points="100,22 156,112 100,138" fill="url(#poleGrad)"/>
+            <polygon id="faceB" points="100,178 44,112 100,138" fill="url(#poleGrad)" opacity=".7"/>
+            <polygon id="faceB2" points="100,178 156,112 100,138" fill="url(#poleGrad)" opacity=".7"/>
+            <g id="edges" stroke="currentColor" stroke-width="1.4" fill="none" opacity=".85">
+              <path d="M100,22 L44,112 L100,178 L156,112 Z"/>
+              <path d="M44,112 L100,138 L156,112"/>
+              <path d="M100,22 L100,138 L100,178"/>
+            </g>
+            <!-- apex marker = declared frame -->
+            <circle id="apex" cx="100" cy="22" r="7" fill="var(--unknown)" opacity=".35"/>
+            <!-- pole marker = truth -->
+            <circle id="pole" cx="100" cy="178" r="5" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+          </g>
+        </svg>
+      </div>
+      <div class="readout" id="readout">
+        <strong>NOT LANDED</strong>
+        <span class="dim">nothing recorded yet</span>
+      </div>
+    </div>
+
+    <!-- ============ interaction ============ -->
+    <div>
+      <div class="claim">
+        <span class="kicker">Claim under review</span>
+        <p id="claimText">The council's decision will destroy local business.</p>
+        <div class="src" id="claimSrc">source: minutes of 14 March, p. 6 · read by 1 person before you</div>
+      </div>
+
+      <div class="step">
+        <span class="kicker">1 · Is it true?</span>
+        <div class="row three">
+          <button class="opt" id="t-true" aria-pressed="false" data-v="entailed">
+            <span class="swatch"></span>True<span class="sub">evidence supports it</span>
+          </button>
+          <button class="opt" id="t-false" aria-pressed="false" data-v="contradicted">
+            <span class="swatch"></span>False<span class="sub">evidence says otherwise</span>
+          </button>
+          <button class="opt" id="t-unknown" aria-pressed="false" data-v="unknown">
+            <span class="swatch"></span>I don't know<span class="sub">no evidence either way</span>
+          </button>
+        </div>
+        <p class="hint"><b>"I don't know" is a real answer here.</b> It costs one tap, same as the others — guessing would be the wrong thing to reward.</p>
+      </div>
+
+      <div class="step">
+        <span class="kicker">2 · How was it framed? <span style="color:var(--faint)">— optional</span></span>
+        <div class="row three">
+          <button class="opt" id="s-red" aria-pressed="false" data-s="redshift">
+            <span class="swatch"></span>Spun against<span class="sub">redshift</span>
+          </button>
+          <button class="opt" id="s-green" aria-pressed="false" data-s="green">
+            <span class="swatch"></span>No spin<span class="sub">green · declared</span>
+          </button>
+          <button class="opt" id="s-blue" aria-pressed="false" data-s="blueshift">
+            <span class="swatch"></span>Spun for<span class="sub">blueshift</span>
+          </button>
+        </div>
+        <p class="hint">This is about <b>how it was written</b>, not whether it's right. A true statement can be spun against; a false one can be written in good faith.</p>
+      </div>
+
+      <div class="record">
+        <div class="record-head">
+          <span class="kicker">What gets recorded</span>
+          <button class="ghost" id="reset" style="padding:5px 10px;font-size:11px">Clear</button>
+        </div>
+        <pre id="json"><span class="cm">// nothing yet — the die has not landed</span></pre>
+      </div>
+
+      <div class="demo">
+        <span class="kicker">The part most systems get wrong</span>
+        <p>Suppose this was marked <em>True</em> on the strength of one document — and that document is later exposed as a forgery. Watch where it goes.</p>
+        <button class="ghost" id="killEvidence">Retract the evidence</button>
+      </div>
+
+      <div class="legend">
+        <div>
+          <h3>Two axes, never one score</h3>
+          <p>Truth is about <em>the world</em>. Framing is about <em>whoever wrote it</em>. Merge them into a single rating and "it feels right" quietly becomes "it is right".</p>
+        </div>
+        <div>
+          <h3>Green is a claim, not a fact</h3>
+          <p>Green means <em>"I declare no spin"</em> — not "this is objective". Nobody can certify their own neutrality, so it's disputable like the other two.</p>
+        </div>
+        <div>
+          <h3>Evidence can die</h3>
+          <p>When a claim loses its evidence it doesn't become false — nobody showed the opposite. It becomes unsupported and <em>returns to "I don't know"</em>.</p>
+        </div>
+      </div>
+
+      <footer>
+        spec + reference implementation: github.com/Szpili/seventh-state ·
+        die vocabulary: yoxi / Magic Fairy Dice by Dr. Dan
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+  const state = { veracity: null, spin: null, was: null, reason: null };
+  const $ = (id) => document.getElementById(id);
+  const die = $('die'), apex = $('apex'), pole = $('pole'), shadow = $('shadow');
+  const poleTop = $('poleTop'), poleBot = $('poleBot');
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const SPIN_VAR = { redshift: '--redshift', green: '--neutral', blueshift: '--blueshift' };
+  const SPIN_WORD = { redshift: 'REDSHIFT', green: 'NO SPIN', blueshift: 'BLUESHIFT' };
+  const VER_WORD = { entailed: 'TRUE', contradicted: 'FALSE', unknown: "DON'T KNOW" };
+
+  function press(group, el) {
+    document.querySelectorAll(`[data-${group}]`).forEach(b => b.setAttribute('aria-pressed', 'false'));
+    if (el) el.setAttribute('aria-pressed', 'true');
+  }
+
+  function renderDie() {
+    const landed = state.veracity === 'entailed' || state.veracity === 'contradicted';
+    die.classList.toggle('floating', !landed);
+    if (landed) { die.classList.remove('settled'); void die.offsetWidth; die.classList.add('settled'); }
+
+    // truth = the pole the die rests on: light body for true, dark for false
+    const body = state.veracity === 'entailed' ? css('--true')
+      : state.veracity === 'contradicted' ? css('--false') : css('--unknown');
+    poleTop.setAttribute('stop-color', body);
+    poleBot.setAttribute('stop-color', body);
+    poleTop.setAttribute('stop-opacity', landed ? '0.34' : '0.16');
+    poleBot.setAttribute('stop-opacity', landed ? '0.10' : '0.04');
+    die.style.color = landed ? css('--ink') : css('--unknown');
+    die.style.opacity = landed ? '1' : '.72';
+    shadow.setAttribute('opacity', landed ? '.35' : '0');
+    pole.setAttribute('fill', landed ? body : 'none');
+    pole.setAttribute('opacity', landed ? '.9' : '.5');
+
+    // apex = declared frame; no colour invented when none was declared
+    if (state.spin) {
+      apex.setAttribute('fill', css(SPIN_VAR[state.spin]));
+      apex.setAttribute('opacity', '1');
+      apex.setAttribute('r', '8');
+    } else {
+      apex.setAttribute('fill', css('--unknown'));
+      apex.setAttribute('opacity', '.3');
+      apex.setAttribute('r', '7');
+    }
+
+    const head = state.veracity ? VER_WORD[state.veracity] : 'NOT LANDED';
+    let sub;
+    if (!state.veracity) sub = 'nothing recorded yet';
+    else if (state.veracity === 'unknown') sub = state.reason === 'warrant-withdrawn'
+      ? 'evidence retracted — back to zero-G' : 'abstained, and that is recorded';
+    else sub = state.spin ? SPIN_WORD[state.spin].toLowerCase() + ' declared' : 'frame not declared';
+    $('readout').innerHTML = `<strong>${head}</strong><span class="dim">${sub}</span>`;
+  }
+
+  function renderJSON() {
+    if (!state.veracity && !state.spin) {
+      $('json').innerHTML = '<span class="cm">// nothing yet — the die has not landed</span>';
+      return;
+    }
+    const q = (s) => `"${s}"`;
+    const cls = state.spin === 'redshift' ? 'warn' : state.spin === 'green' ? 'calm' : '';
+    const L = [];
+    L.push('{');
+    L.push(`  <span class="k">"subject"</span>: { <span class="k">"kind"</span>: <span class="v">"claim"</span>, <span class="k">"id"</span>: <span class="v">"claim:council-decision"</span> },`);
+    if (state.veracity)
+      L.push(`  <span class="k">"veracity"</span>: <span class="v">${q(state.veracity)}</span>,`);
+    if (state.spin)
+      L.push(`  <span class="k">"spin"</span>: <span class="v ${cls}">${q(state.spin)}</span>,`);
+    else
+      L.push(`  <span class="cm">// no spin key — a frame you did not declare is never invented</span>`);
+    if (state.reason)
+      L.push(`  <span class="k">"reason"</span>: <span class="v">${q(state.reason)}</span>,`);
+    if (state.was)
+      L.push(`  <span class="k">"was"</span>: { <span class="k">"veracity"</span>: <span class="v">${q(state.was)}</span> },  <span class="cm">// un-learning stays auditable</span>`);
+    L.push(`  <span class="k">"rater"</span>: { <span class="k">"id"</span>: <span class="v">"you"</span>, <span class="k">"kind"</span>: <span class="v">"human"</span> },`);
+    L.push(`  <span class="k">"at"</span>: <span class="v">"2026-07-25T09:12:00Z"</span>`);
+    L.push('}');
+    $('json').innerHTML = L.join('\n');
+  }
+
+  function update() { renderDie(); renderJSON(); }
+
+  document.querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => {
+    state.veracity = b.dataset.v;
+    state.reason = b.dataset.v === 'unknown' ? 'no-evidence' : 'proved';
+    state.was = null;
+    press('v', b);
+    $('killEvidence').disabled = b.dataset.v === 'unknown';
+    update();
+  }));
+
+  document.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => {
+    const same = state.spin === b.dataset.s;
+    state.spin = same ? null : b.dataset.s;   // click again to withdraw the frame
+    press('s', same ? null : b);
+    update();
+  }));
+
+  $('killEvidence').addEventListener('click', () => {
+    if (state.veracity !== 'entailed' && state.veracity !== 'contradicted') return;
+    state.was = state.veracity;
+    state.veracity = 'unknown';
+    state.reason = 'warrant-withdrawn';
+    press('v', $('t-unknown'));
+    $('t-unknown').setAttribute('aria-pressed', 'true');
+    update();
+  });
+
+  $('reset').addEventListener('click', () => {
+    state.veracity = state.spin = state.was = state.reason = null;
+    press('v', null); press('s', null);
+    $('killEvidence').disabled = false;
+    update();
+  });
+
+  new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', update);
+  update();
+</script>
