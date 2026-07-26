@@ -32,12 +32,16 @@ test('a roll that never landed is the seventh state', () => {
 });
 
 test('poles carry truth, apex carries spin', () => {
-  assert.deepEqual(fromDieRoll({ whiteMode: true, apexVi: VI.BLUE }), { veracity: 'entailed', spin: 'blueshift' });
-  assert.deepEqual(fromDieRoll({ whiteMode: false, apexVi: VI.RED }), { veracity: 'contradicted', spin: 'redshift' });
+  // Polarity is the author's: white = 0 = false, black = 1 = true. Pinned
+  // here because this spec shipped with it inverted and nothing caught it.
+  assert.deepEqual(fromDieRoll({ whiteMode: false, apexVi: VI.BLUE }), { veracity: 'entailed', spin: 'blueshift' });
+  assert.deepEqual(fromDieRoll({ whiteMode: true, apexVi: VI.RED }), { veracity: 'contradicted', spin: 'redshift' });
+  assert.equal(toDieRoll({ veracity: 'entailed' }).whiteMode, false, 'true lands on black');
+  assert.equal(toDieRoll({ veracity: 'contradicted' }).whiteMode, true, 'false lands on white');
 });
 
 test('a pure pole click invents no frame (spin stays absent, not green)', () => {
-  const r = fromDieRoll({ whiteMode: true, apexVi: VI.GREEN, clickVote: VI.WHITE });
+  const r = fromDieRoll({ whiteMode: false, apexVi: VI.GREEN, clickVote: VI.BLACK });
   assert.equal(r.veracity, 'entailed');
   assert.equal(r.spin, undefined, 'defaulting to green would fabricate a declared frame');
 });

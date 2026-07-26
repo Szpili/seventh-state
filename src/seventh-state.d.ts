@@ -59,6 +59,7 @@ export interface Evidence {
 }
 
 export interface DieRoll {
+  /** white = 0 = false, black = 1 = true (the die author's polarity) */
   whiteMode?: boolean;
   apexVi?: number;
   clickVote?: number;

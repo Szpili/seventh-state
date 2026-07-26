@@ -95,12 +95,16 @@ confused in output:
 
 | die | axis | meaning |
 |---|---|---|
-| white pole | veracity | `entailed` |
-| black pole | veracity | `contradicted` |
+| black pole (1) | veracity | `entailed` |
+| white pole (0) | veracity | `contradicted` |
 | **has not landed / zero-G** | veracity | **`unknown` — the seventh state** |
 | red apex | spin | `redshift` — declared spin away |
 | green apex | spin | `green` — *"I declare no spin"* |
 | blue apex | spin | `blueshift` — declared spin toward |
+
+The poles read as binary, not as intuition: **white is 0 (false), black is 1
+(true)**. This is the die author's convention, and an earlier draft of this
+spec had it inverted — hence the frozen test that pins it.
 
 The geometry does work that would otherwise need enforcing in code: every face of
 a triangular bipyramid is exactly one pole plus two colours, with the third colour

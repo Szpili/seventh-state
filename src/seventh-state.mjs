@@ -31,6 +31,11 @@ export const REASON = /** @type {const} */ ({
 /**
  * Vertex indices of the triangular bipyramid, matching the yoxi toy.
  * Two poles carry the truth axis; three coloured tips carry the frame.
+ *
+ * POLARITY, per the die's author: vertex 0 is white and reads 0 / FALSE;
+ * vertex 1 is black and reads 1 / TRUE. It is the binary reading, not the
+ * intuitive one — an earlier revision of this file had it the other way
+ * round and every mapping below was silently inverted.
  */
 export const VI = /** @type {const} */ ({ WHITE: 0, BLACK: 1, RED: 2, GREEN: 3, BLUE: 4 });
 
@@ -53,8 +58,9 @@ const SPIN_TO_APEX = { redshift: VI.RED, green: VI.GREEN, blueshift: VI.BLUE };
  */
 export function fromDieRoll(roll) {
   if (!roll) return { veracity: 'unknown' };
-  const veracity = roll.whiteMode === true ? 'entailed'
-    : roll.whiteMode === false ? 'contradicted'
+  // white = 0 = false, black = 1 = true (see VI)
+  const veracity = roll.whiteMode === true ? 'contradicted'
+    : roll.whiteMode === false ? 'entailed'
       : 'unknown';
   const polePress = roll.clickVote === VI.WHITE || roll.clickVote === VI.BLACK;
   const spin = polePress ? undefined : APEX_TO_SPIN[roll.apexVi];
@@ -68,7 +74,7 @@ export function fromDieRoll(roll) {
  */
 export function toDieRoll(rating) {
   if (!rating || rating.veracity === 'unknown' || rating.veracity == null) return null;
-  const pole = rating.veracity === 'entailed' ? VI.WHITE : VI.BLACK;
+  const pole = rating.veracity === 'entailed' ? VI.BLACK : VI.WHITE;
   const apex = rating.spin ? SPIN_TO_APEX[rating.spin] : undefined;
   return { whiteMode: pole === VI.WHITE, apexVi: apex, clickVote: apex === undefined ? pole : undefined };
 }
